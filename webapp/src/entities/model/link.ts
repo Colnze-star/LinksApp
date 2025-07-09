@@ -4,4 +4,5 @@ export type Link = {
   shortCode: string;
   createdAt: Date;    // Дата создания
   updatedAt: Date;    // Дата последнего обновления
+  userId?: string
 };

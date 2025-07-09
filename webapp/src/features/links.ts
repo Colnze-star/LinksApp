@@ -1,7 +1,6 @@
-import type { Link } from '../model/link';
+import type { Link } from '../entities/model/link';
 
-
-let Links: Link[] = [
+const Links: Link[] = [
   {
     id: 1,
     originalUrl: "https://www.google.com/search?q=typescript+tutorial",
@@ -42,8 +41,8 @@ let Links: Link[] = [
 // Функция-заглушка для POST /shortCode
 export const getShortCode = (originalUrl: string): Promise<string> => {
   // алгоритм короткого кода
-  return new Promise((resolve) => {
-    let code = Math.random().toString(36).substring(2, 8); // ...
+  return new Promise((resolve) => {    
+    const code = Math.random().toString(36).substring(2, 8); // ...
     setTimeout(() => resolve(code), 250); 
   });
 
