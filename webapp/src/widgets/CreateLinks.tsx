@@ -1,49 +1,57 @@
 import { useState } from 'react'
-import { getShortCode } from '../features/links';
 import { Form, Button, Input } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { urlSchema } from '../shared/validationSchemas';
-import * as yup from 'yup';
+import { api } from '../features/api';
+import type { Link, FormUrl } from '../model/link';
 import '../App.css'
-
-
+  
 const CreateLinks = () => {
 
-    type FormData = yup.InferType<typeof urlSchema>;
-    const [shortCode, setShortCode] = useState(""); // Для хранения результата
-    const [isCopied, setIsCopied] = useState(false);
+  const [shortCode, setShortCode] = useState(""); 
+  const [isCopied, setIsCopied] = useState(false);
 
-      const {
-        control,
-        handleSubmit,
-        formState: { errors }
-    } = useForm<FormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors }
+    } = useForm<FormUrl>({
         resolver: yupResolver(urlSchema),
         mode: 'onChange'
     });
 
-    const onSubmit = async (data: FormData) => {
-    try {
-        const code = await getShortCode(data.url); // API-запрос на получение короткой сссылки
-        setShortCode(code);      
-        setIsCopied(false);
-    } catch (error) {
-        console.error("Ошибка:", error);
-    } 
-    };
+   const onSubmit = async (data: FormUrl) => {
+   try {
+        const response = await api.post<Link>('/links', { 
+        originalUrl: data.url 
+      });
+    
+    if (response.data.shortCode) {
+      setShortCode(response.data.shortCode);
+      console.log("Короткий код:", response.data.shortCode);
+    
+      const fullShortUrl = `http://localhost:8080/${response.data.shortCode}`;
+      console.log("Полная короткая ссылка:", fullShortUrl);
+    } else {
+      throw new Error("Сервер не вернул shortCode");
+    }
+  } catch (error) {
+    console.error("Ошибка:", error);
+  }
+  };
 
-    // Функция для копирования в буфер обмена
-    const copyToClipboard = () => {
-        if (!shortCode) return;
-        navigator.clipboard.writeText(`${window.location.origin}/${shortCode}`)
-        .then(() => {
-            setIsCopied(true);
-        });
-    };
+  // Функция для копирования в буфер обмена
+  const copyToClipboard = () => {
+      if (!shortCode) return;
+      navigator.clipboard.writeText(`${window.location.origin}/${shortCode}`)
+      .then(() => {
+          setIsCopied(true);
+      });
+  };
 
-    return (
-    <>
+  return (
+    <main className='main'>
       <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
         <div style={{ marginBottom: 8 }}>Введите URL</div>
         <div style={{ display:'flex', gap: 20 }}>
@@ -52,7 +60,7 @@ const CreateLinks = () => {
             name="url"
             control={control}
             render={({ field }) => (
-                <Input style={{ width: 350 }} {...field} placeholder="https://example.com" showCount maxLength={30} /> 
+                <Input style={{ width: 500 }} {...field} placeholder="https://example.com" showCount maxLength={2048} /> 
                 )}
             />
         </Form.Item>
@@ -64,16 +72,16 @@ const CreateLinks = () => {
           <Input 
             value={`${window.location.origin}/${shortCode}`}
             readOnly
-            style={{ marginBottom: 8, width: 350 }}
+            style={{ marginBottom: 8, width: 500 }}
           />
           <Button onClick={copyToClipboard} type={isCopied ? 'default' : 'primary'} >
             {isCopied ? 'Скопировано!' : 'Копировать'}
           </Button>
         </div>
       )}
-    </>
+    </main>
   );
-    
+      
 }
 
 export default  CreateLinks;

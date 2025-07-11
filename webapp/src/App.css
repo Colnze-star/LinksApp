@@ -1,0 +1,11 @@
+.main {
+    margin: 5%;
+    display: flex;
+    justify-content: center;
+}
+
+.message {
+    margin-bottom: 100px;
+    display: flex;
+    justify-content: center;
+}

@@ -1,4 +1,4 @@
-import Links from '../widgets/TableLinks';
+import TableLinks from '../widgets/TableLinks';
 import CreateLinks from '../widgets/CreateLinks';
 
 const User = () => {
@@ -6,7 +6,7 @@ const User = () => {
   return (
     <> 
         <CreateLinks />
-        <Links />
+        <TableLinks />
     </>
  
   );

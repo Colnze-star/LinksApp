@@ -1,28 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Button, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { getLinks } from '../features/links';
-import type { Link } from '../entities/model/link';
+import { api } from '../features/api';
+import type { ApiResponse } from '../model/link';
+import type { Link } from '../model/link';
 import { formatDate } from "../shared/format";
-import type { ColumnType, Key } from 'antd/es/table/interface';
+import { getColumnSearchProps } from '../features/search-props';
+import '../App.css'
 
 const Links: React.FC = () => {
+
   const [links, setLinks] = useState<Link[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null)
 
-  interface FilterDropdownProps {
-    setSelectedKeys: (keys: Key[]) => void;
-    selectedKeys: Key[];
-    confirm: () => void;
-    clearFilters?: () => void;
-}
+  const fetchData = async () => {
+    try {
+      const response = await api.get<ApiResponse>('links/all', { 
+        params: {
+          page: 0,
+          size: 5,
+          sort: 'desc',
+        },
+      });
+        const linksWithDates = response.data.content.map(link => ({
+      ...link,
+      createdAt: new Date(link.createdAt),  
+      updatedAt: new Date(link.updatedAt),  
+    }));
+      setLinks(linksWithDates);
+      setLoading(false);
+    } catch (error) {
+      setError('Не удалось загрузить данные');
+      setLoading(false);
+      console.error("Ошибка:", error);
+    }
+  };
 
   useEffect(() => {
-    getLinks()
-      .then((data) => setLinks(data))
-      .catch((error) => console.error(error));
+    fetchData();
   }, []);
+
+  
+  if (loading) return <div className='message'>Загрузка...</div>;
+  if (error) return <div  className='message'>{error}</div>;
 
   const handleEdit = (link: Link) => { 
     setEditingId(link.id);
@@ -45,40 +68,6 @@ const Links: React.FC = () => {
     const originalUrl = "https://react.dev/learn/typescript"; // API-запрос на редирект
     window.open(originalUrl, '_blank');
   };
-
-  const handleReset = (clearFilters?: () => void, confirm?: () => void) => {
-    clearFilters?.();
-    confirm?.();
-  };
-
-  const getColumnSearchProps = <T,>(dataIndex: keyof T): ColumnType<T> => ({
-  filterDropdown: ({
-    setSelectedKeys,
-    selectedKeys,
-    confirm,
-    clearFilters,
-  }: FilterDropdownProps) => (
-    <div style={{ padding: 8 }}>
-      <Input
-        placeholder={`Search ${String(dataIndex)}`}
-        value={selectedKeys[0] as string}
-        onChange={(e) =>
-          setSelectedKeys(e.target.value ? [e.target.value] : [])
-        }
-        onPressEnter={() => confirm()}
-        style={{ marginBottom: 8, display: 'block' }}
-      />
-      <Button type="primary" onClick={() => confirm()} size="small" style={{ width: 90, marginRight: 8 }}> Поиск </Button>
-      <Button onClick={() => handleReset(clearFilters, confirm)} size="small" style={{ width: 90 }} > Сброс </Button>
-    </div>
-  ),
-  onFilter: (value: boolean | Key, record: T) => {
-    const recordValue = record[dataIndex];
-    return String(recordValue)
-      .toLowerCase()
-      .includes(String(value).toLowerCase());
-  },
-});
 
 const columns: TableColumnsType<Link> = [
   {
